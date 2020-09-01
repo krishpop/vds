@@ -81,6 +81,11 @@ def make_env(env_id, env_type, mpi_rank=0, subrank=0, seed=None, reward_scale=1.
         from baselines.envs.goal_sampler_env_wrapper import GoalSamplerEnvWrapper
         env = gym.make(env_id, **env_kwargs)
         env = GoalSamplerEnvWrapper(env)
+    elif env_type == 'rrc':
+        from rrc_simulation.gym_wrapper.envs import cube_env
+        print('using flatten wrapper')
+        env = gym.make(env_id, **env_kwargs)
+        env = cube_env.FlattenDictWrapper(env)
     else:
         env = gym.make(env_id, **env_kwargs)
 
