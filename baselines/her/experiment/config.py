@@ -85,7 +85,7 @@ def cached_make_env(make_env):
     if make_env not in CACHED_ENVS:
         env = make_env()
         CACHED_ENVS[make_env] = env
-        env.goal = env.unwrapped._sample_goal()
+        env.goal = env._sample_goal()
         env.reset(reset_goal=False)
     return CACHED_ENVS[make_env]
 
@@ -100,6 +100,9 @@ def prepare_params(kwargs):
         if kwargs['env_type'] == 'goal':
             from baselines.envs.goal_sampler_env_wrapper import GoalSamplerEnvWrapper
             env = GoalSamplerEnvWrapper(env)
+        elif kwargs['env_type'] == 'rrc':
+            from rrc_simulation.gym_wrapper.envs import cube_env
+            env = cube_env.FlattenDictWrapper(env)
         if subrank is not None and logger.get_dir() is not None:
             try:
                 from mpi4py import MPI
@@ -238,10 +241,15 @@ def configure_ve_her(params):
 def configure_disagreement(params, value_ensemble, policy):
     env = cached_make_env(params['make_env'])
     # env.get_reset()
+    if params.get('env_type') == 'rrc':
+        sample_goal_fn = lambda size: [env._sample_goal() for _ in range(size)]
+    else:
+        sample_goal_fn = lambda size: [env.unwrapped._sample_goal() for _ in range(size)]
+
 
     disagreement_params = dict(
         # 'static_init_obs': env.static_init_obs,
-        sample_goals_fun=lambda size: [env.unwrapped._sample_goal() for _ in range(size)],
+        sample_goals_fun=sample_goal_fn,
         policy=policy,
         value_ensemble=value_ensemble,
     )
